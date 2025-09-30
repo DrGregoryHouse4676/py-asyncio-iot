@@ -17,37 +17,45 @@ async def main() -> None:
         service.register_device(speaker),
         service.register_device(toilet),
     )
-    await run_sequence(
-        run_parallel(
-            service.send_msg(Message(hue_light_id, MessageType.SWITCH_ON)),
-            service.send_msg(Message(speaker_id, MessageType.SWITCH_ON)),
-        ),
-        service.send_msg(Message(speaker_id, MessageType.PLAY_SONG, "Rick Astley - Never Gonna Give You Up")),
-    )
+
+    try:
+        await run_sequence(
+            run_parallel(
+                service.send_msg(Message(hue_light_id, MessageType.SWITCH_ON)),
+                service.send_msg(Message(speaker_id, MessageType.SWITCH_ON)),
+            ),
+            service.send_msg(Message(speaker_id, MessageType.PLAY_SONG, "Rick Astley - Never Gonna Give You Up")),
+        )
 
     # run the programs
-    await run_sequence(
-        run_parallel(
-            service.send_msg(
-                Message(
-                    hue_light_id,
-                    MessageType.SWITCH_OFF
-                )
+        await run_sequence(
+            run_parallel(
+                service.send_msg(
+                    Message(
+                        hue_light_id,
+                        MessageType.SWITCH_OFF
+                    )
+                ),
+                service.send_msg(
+                    Message(
+                        speaker_id,
+                        MessageType.SWITCH_OFF)
+                ),
+                service.send_msg(
+                    Message(
+                        toilet_id,
+                        MessageType.FLUSH
+                    )
+                ),
             ),
-            service.send_msg(
-                Message(
-                    speaker_id,
-                    MessageType.SWITCH_OFF)
-            ),
-            service.send_msg(
-                Message(
-                    toilet_id,
-                    MessageType.FLUSH
-                )
-            ),
-        ),
-        service.send_msg(Message(toilet_id, MessageType.CLEAN)),
-    )
+            service.send_msg(Message(toilet_id, MessageType.CLEAN)),
+        )
+    finally:
+        await asyncio.gather(
+            service.unregister_device(hue_light_id),
+            service.unregister_device(speaker_id),
+            service.unregister_device(toilet_id),
+        )
 
 
 if __name__ == "__main__":
